@@ -5,10 +5,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' },
-        cyber: { neon: '#00ffcc', purple: '#a855f7', pink: '#ec4899', dark: '#0f172a' },
+        // Nama kunci tetap sama; hanya warnanya diganti ke teal/biru laut (tema Dies Natalis)
+        brand: { 50: '#E6F7F7', 500: '#12A3A8', 600: '#0B7F86', 700: '#096A72', 900: '#0A444B' },
+        cyber: { neon: '#0B7F86', purple: '#1B6FA8', pink: '#FF7A59', dark: '#0E3B4F' },
       },
-      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], display: ['Fredoka', 'system-ui', 'sans-serif'] },
     },
   },
   plugins: [],

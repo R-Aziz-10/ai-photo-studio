@@ -10,7 +10,7 @@ import ResultModal from './components/ResultModal';
 import type { ShareState } from './components/ResultModal';
 
 import { ACCESSORIES } from './config/accessories';
-import { THEMES, CUSTOM_THEME_ID } from './config/themes';
+import { THEMES, CUSTOM_THEME_ID, RANDOM_THEME_ID } from './config/themes';
 import { composePrompt, validateCustomInputs } from './config/customPrompts';
 import { ASK_CONSENT_EVERY_PHOTO, FACE_PRESERVE_PROMPT, OUTPUT_SIZE, POPULAR_TOP_N } from './config/constants';
 
@@ -20,6 +20,8 @@ import { captureFrame, fileToDataUrl } from './services/capture';
 import { generateStyledImage } from './services/ai';
 import { uploadResult } from './services/storage';
 import { logStylePick, fetchStyleCounts } from './services/trends';
+import { consumeGeneration, refundGeneration, fetchQuota } from './services/quota';
+import type { Quota } from './services/quota';
 
 const CONSENT_KEY = 'ai_studio_consent';
 
@@ -31,7 +33,7 @@ export default function App() {
   const camera = useCamera(videoRef);
   const [isMirror, setIsMirror] = useState(true);
   const [accessoryId, setAccessoryId] = useState('none');
-  const [themeId, setThemeId] = useState(THEMES[0].id);
+  const [themeId, setThemeId] = useState(RANDOM_THEME_ID) // bawaan: tema diacak (kejutan);
   const [customTheme, setCustomTheme] = useState('');
   const [extraAccessory, setExtraAccessory] = useState('');
   const tracking = useFaceTracking({
@@ -51,9 +53,15 @@ export default function App() {
   // Proses AI & hasil
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [result, setResult] = useState<null | { before: string; after: string; themeName: string }>(null);
+  const [result, setResult] = useState<null | { before: string; after: string; themeName: string; surprise: boolean }>(null);
   const [share, setShare] = useState<ShareState>({ url: null, status: 'idle' });
   const shareToken = useRef(0);
+
+  // Kuota generate harian (180 per hari, reset 07.00 WIB seperti Cloudflare)
+  const [quota, setQuota] = useState<Quota | null>(null);
+  useEffect(() => {
+    fetchQuota().then(setQuota);
+  }, []);
 
   // Tren tema (rekomendasi)
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -106,12 +114,14 @@ export default function App() {
 
   // ---------- Generate ----------
   const runGeneration = async (source: string) => {
-    const theme = themeId === CUSTOM_THEME_ID ? null : THEMES.find((t) => t.id === themeId) || THEMES[0];
+    const isRandom = themeId === RANDOM_THEME_ID;
+    const effectiveId = isRandom ? THEMES[Math.floor(Math.random() * THEMES.length)].id : themeId;
+    const theme = effectiveId === CUSTOM_THEME_ID ? null : THEMES.find((t) => t.id === effectiveId) || THEMES[0];
     const accessory = ACCESSORIES.find((a) => a.id === accessoryId) || ACCESSORIES[0];
 
     const prompt = composePrompt({
       theme,
-      themeId,
+      themeId: effectiveId,
       accessory,
       customTheme,
       extraAccessory,
@@ -120,12 +130,21 @@ export default function App() {
 
     setErrorMsg(null);
     setLoading(true);
+    let consumed = false;
     try {
+      const q = await consumeGeneration();
+      setQuota(q);
+      if (!q.allowed) {
+        setErrorMsg('Kuota generate hari ini sudah habis. Silakan coba lagi besok (reset 07.00 WIB).');
+        return;
+      }
+      consumed = true;
       const after = await generateStyledImage(source, prompt, OUTPUT_SIZE, theme ? theme.id : 'cyberpunk');
-      setResult({ before: source, after, themeName: theme ? theme.name : 'Kustom' });
+      setResult({ before: source, after, themeName: theme ? theme.name : 'Kustom', surprise: isRandom });
       logStylePick(theme ? theme.id : CUSTOM_THEME_ID).then(refreshCounts);
       uploadAndShare(after);
     } catch (err: any) {
+      if (consumed) refundGeneration().then((q) => q && setQuota(q)); // gagal = kuota dikembalikan
       setErrorMsg(err?.message || 'Terjadi kesalahan saat memproses foto. Silakan coba lagi.');
     } finally {
       setLoading(false);
@@ -137,6 +156,10 @@ export default function App() {
     const invalid = validateCustomInputs(themeId, customTheme, extraAccessory);
     if (invalid) {
       setErrorMsg(invalid);
+      return;
+    }
+    if (tracking.status !== 'locked') {
+      setErrorMsg('Wajah belum terdeteksi. Hadap kamera dan pastikan cahaya cukup sampai status "Locked", lalu coba lagi.');
       return;
     }
     const frame = captureFrame(videoRef.current, overlayRef.current, isMirror); // foto dibekukan saat tombol ditekan
@@ -164,7 +187,9 @@ export default function App() {
     if (ASK_CONSENT_EVERY_PHOTO) setConsentGiven(false); // pengunjung berikutnya harus setuju lagi
   };
 
-  const accessoryName = (ACCESSORIES.find((a) => a.id === accessoryId) || ACCESSORIES[0]).name;
+  const currentAccessory = ACCESSORIES.find((a) => a.id === accessoryId) || ACCESSORIES[0];
+  const accessoryName = currentAccessory.name;
+  const accessoryIsAi = accessoryId !== 'none' && !currentAccessory.draw;
 
   return (
     <>
@@ -179,6 +204,7 @@ export default function App() {
             cameraError={camera.error}
             isMirror={isMirror}
             accessoryName={accessoryName}
+            accessoryIsAi={accessoryIsAi}
             disabled={loading}
             onActivate={camera.activate}
             onToggleMirror={() => setIsMirror((m) => !m)}
@@ -188,13 +214,13 @@ export default function App() {
           />
 
           {errorMsg && (
-            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 flex items-start gap-3 text-sm">
-              <i className="fa-solid fa-circle-exclamation text-rose-400 mt-0.5"></i>
+            <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-800 flex items-start gap-3 text-sm">
+              <i className="fa-solid fa-circle-exclamation text-rose-600 mt-0.5"></i>
               <div className="flex-1">
-                <p className="font-semibold text-rose-300">Gagal Memproses</p>
-                <p className="text-xs sm:text-sm text-rose-200/90 mt-0.5">{errorMsg}</p>
+                <p className="font-semibold text-rose-700">Gagal Memproses</p>
+                <p className="text-xs sm:text-sm text-rose-700 mt-0.5">{errorMsg}</p>
               </div>
-              <button onClick={() => setErrorMsg(null)} className="text-rose-400 hover:text-white">
+              <button onClick={() => setErrorMsg(null)} className="text-rose-600 hover:text-rose-900">
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
@@ -219,7 +245,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="w-full border-t border-slate-800/80 bg-slate-950/80 py-4 px-4 text-center text-xs text-slate-500">
+      <footer className="w-full border-t-2 border-white bg-white/80 py-4 px-4 text-center text-xs text-slate-600">
         <p>AI Photo Studio &copy; 2026 — MediaPipe Face Mesh & FLUX.2 (Cloudflare Workers AI)</p>
       </footer>
 
@@ -230,6 +256,7 @@ export default function App() {
         beforeUrl={result?.before || ''}
         afterUrl={result?.after || ''}
         themeName={result?.themeName || ''}
+        surprise={result?.surprise}
         share={share}
         onRetryShare={() => result && uploadAndShare(result.after)}
         onClose={closeResult}

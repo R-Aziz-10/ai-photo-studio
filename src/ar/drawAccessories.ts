@@ -647,3 +647,123 @@ export const drawMustache: DrawFn = (ctx, g) => {
     ctx.stroke();
   });
 };
+
+// 14. TOPI KOKI PUTIH
+export const drawChefHat: DrawFn = (ctx, g) => {
+  const { forehead, eyeDistance: d, angle, faceWidth } = g;
+  ctx.translate(forehead.x, forehead.y + d * 0.05);
+  ctx.rotate(angle);
+  const w = faceWidth * 0.8;
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = Math.max(2, d * 0.03);
+  const puffs: [number, number, number][] = [[-w * 0.28, -d * 0.85, d * 0.42], [0, -d * 1.05, d * 0.5], [w * 0.28, -d * 0.85, d * 0.42]];
+  puffs.forEach(([x, y, r]) => {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+  ctx.beginPath();
+  ctx.rect(-w / 2, -d * 0.7, w, d * 0.7);
+  ctx.fill();
+  ctx.stroke();
+};
+
+// 15. BANDO KELINCI
+export const drawBunnyEars: DrawFn = (ctx, g) => {
+  const { forehead, eyeDistance: d, angle, faceWidth } = g;
+  ctx.translate(forehead.x, forehead.y - d * 0.05);
+  ctx.rotate(angle);
+  const sx = faceWidth * 0.22;
+  ctx.strokeStyle = '#f9a8d4';
+  ctx.lineWidth = Math.max(3, d * 0.07);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-sx * 1.9, d * 0.12);
+  ctx.quadraticCurveTo(0, -d * 0.28, sx * 1.9, d * 0.12);
+  ctx.stroke();
+  SIDES.forEach((s) => {
+    ctx.save();
+    ctx.translate(s * sx, -d * 0.1);
+    ctx.rotate(s * 0.18);
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = Math.max(1.5, d * 0.03);
+    ctx.beginPath();
+    ctx.ellipse(0, -d * 0.75, d * 0.2, d * 0.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#fbcfe8';
+    ctx.beginPath();
+    ctx.ellipse(0, -d * 0.7, d * 0.1, d * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+};
+
+// 16. ANTENA ROBOT MINI
+export const drawRobotAntenna: DrawFn = (ctx, g, t) => {
+  const { forehead, eyeDistance: d, angle, faceWidth } = g;
+  ctx.translate(forehead.x, forehead.y - d * 0.02);
+  ctx.rotate(angle);
+  const sx = faceWidth * 0.2;
+  ctx.lineCap = 'round';
+  SIDES.forEach((s, i) => {
+    const tx = s * sx * 1.5;
+    const ty = -d * 0.9;
+    ctx.strokeStyle = '#0b7f86';
+    ctx.lineWidth = Math.max(3, d * 0.06);
+    ctx.beginPath();
+    ctx.moveTo(s * sx, 0);
+    ctx.quadraticCurveTo(s * sx * 1.1, -d * 0.5, tx, ty);
+    ctx.stroke();
+    const r = d * 0.12 * (1 + 0.15 * Math.sin(t + i));
+    ctx.shadowColor = '#5eead4';
+    ctx.shadowBlur = d * 0.3;
+    ctx.fillStyle = '#ff7a59';
+    ctx.beginPath();
+    ctx.arc(tx, ty, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+  ctx.fillStyle = '#e6f7f7';
+  ctx.strokeStyle = '#0b7f86';
+  ctx.lineWidth = Math.max(2, d * 0.04);
+  ctx.beginPath();
+  ctx.rect(-faceWidth * 0.4, -d * 0.12, faceWidth * 0.8, d * 0.14);
+  ctx.fill();
+  ctx.stroke();
+};
+
+// 17. KACAMATA HATI Y2K
+function heartPath(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + s * 0.35);
+  ctx.bezierCurveTo(x - s * 1.1, y - s * 0.35, x - s * 0.5, y - s * 1.05, x, y - s * 0.45);
+  ctx.bezierCurveTo(x + s * 0.5, y - s * 1.05, x + s * 1.1, y - s * 0.35, x, y + s * 0.35);
+  ctx.closePath();
+}
+export const drawHeartGlasses: DrawFn = (ctx, g) => {
+  const { leftEye, rightEye, eyeDistance: d, angle } = g;
+  ctx.translate((leftEye.x + rightEye.x) / 2, (leftEye.y + rightEye.y) / 2);
+  ctx.rotate(angle);
+  const cx = d * 0.38;
+  const size = d * 0.34;
+  ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+  ctx.strokeStyle = '#be185d';
+  ctx.lineWidth = Math.max(2.5, d * 0.05);
+  SIDES.forEach((s) => {
+    heartPath(ctx, s * cx, 0, size);
+    ctx.fill();
+    ctx.stroke();
+  });
+  ctx.beginPath();
+  ctx.moveTo(-cx + size * 0.35, -size * 0.2);
+  ctx.lineTo(cx - size * 0.35, -size * 0.2);
+  ctx.moveTo(-cx - size * 1.0, -size * 0.2);
+  ctx.lineTo(-d * 0.85, 0);
+  ctx.moveTo(cx + size * 1.0, -size * 0.2);
+  ctx.lineTo(d * 0.85, 0);
+  ctx.stroke();
+};

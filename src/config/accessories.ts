@@ -2,6 +2,7 @@ import {
   drawGlasses, drawComms, drawCrown,
   drawGraduationCap, drawMerahPutih, drawCatEars, drawRoundGlasses, drawSunglasses,
   drawHalo, drawWizardHat, drawFlowerCrown, drawHeroMask, drawMustache,
+  drawChefHat, drawBunnyEars, drawRobotAntenna, drawHeartGlasses,
   computeGeometry,
 } from '../ar/drawAccessories';
 import type { DrawFn, Landmark } from '../ar/drawAccessories';
@@ -16,6 +17,7 @@ import type { DrawFn, Landmark } from '../ar/drawAccessories';
 // ============================================================
 export type Accessory = {
   id: string;
+  group: string; // Semua | Kepala | Wajah | Spesial | Badan
   name: string;
   sub: string;
   icon: string;
@@ -27,6 +29,7 @@ export type Accessory = {
 export const ACCESSORIES: Accessory[] = [
   {
     id: 'none',
+    group: 'Semua',
     name: 'Tanpa Aksesoris',
     sub: 'Original Face',
     icon: 'fa-ban',
@@ -35,6 +38,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'glasses',
+    group: 'Wajah',
     name: 'Kacamata Visor',
     sub: 'Cyber-Neon HUD',
     icon: 'fa-glasses',
@@ -45,6 +49,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'comms',
+    group: 'Wajah',
     name: 'Alat Komunikasi',
     sub: 'Cyberpunk Earpiece',
     icon: 'fa-headset',
@@ -55,6 +60,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'crown',
+    group: 'Kepala',
     name: 'Mahkota Kristal',
     sub: 'Holographic Aura',
     icon: 'fa-crown',
@@ -65,6 +71,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'graduation',
+    group: 'Kepala',
     name: 'Topi Wisuda',
     sub: 'Toga & jumbai emas',
     icon: 'fa-graduation-cap',
@@ -74,6 +81,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'merahputih',
+    group: 'Kepala',
     name: 'Ikat Kepala Merah Putih',
     sub: 'Semangat Indonesia',
     icon: 'fa-flag',
@@ -83,6 +91,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'catears',
+    group: 'Kepala',
     name: 'Telinga Kucing',
     sub: 'Bando manis',
     icon: 'fa-cat',
@@ -92,6 +101,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'roundglasses',
+    group: 'Wajah',
     name: 'Kacamata Bulat',
     sub: 'Klasik berbingkai emas',
     icon: 'fa-glasses',
@@ -101,6 +111,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'sunglasses',
+    group: 'Wajah',
     name: 'Kacamata Hitam',
     sub: 'Gaya santai',
     icon: 'fa-sun',
@@ -110,6 +121,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'halo',
+    group: 'Kepala',
     name: 'Lingkaran Cahaya',
     sub: 'Halo malaikat',
     icon: 'fa-circle-notch',
@@ -119,6 +131,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'wizardhat',
+    group: 'Kepala',
     name: 'Topi Penyihir',
     sub: 'Bertabur bintang',
     icon: 'fa-hat-wizard',
@@ -128,6 +141,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'flowercrown',
+    group: 'Kepala',
     name: 'Mahkota Bunga',
     sub: 'Segar & ceria',
     icon: 'fa-seedling',
@@ -137,6 +151,7 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'heromask',
+    group: 'Wajah',
     name: 'Topeng Pahlawan',
     sub: 'Superhero merah',
     icon: 'fa-mask',
@@ -146,12 +161,53 @@ export const ACCESSORIES: Accessory[] = [
   },
   {
     id: 'mustache',
+    group: 'Wajah',
     name: 'Kumis Tebal',
     sub: 'Ala tuan terhormat',
     icon: 'fa-face-smile',
     iconBox: 'bg-orange-500/20 text-orange-300',
     promptHint: 'The person has a thick stylish handlebar mustache. Keep it clearly visible.',
     draw: drawMustache,
+  },
+  {
+    id: 'robotantenna',
+    group: 'Spesial',
+    name: 'Antena Robot Mini',
+    sub: 'Maskot Dies Natalis',
+    icon: 'fa-robot',
+    iconBox: 'bg-teal-100 text-teal-700',
+    promptHint: "The person wears a cute mini robot-antenna headband with two glowing coral antenna balls. Keep it clearly visible.",
+    draw: drawRobotAntenna,
+  },
+  {
+    id: 'chefhat',
+    group: 'Kepala',
+    name: 'Topi Koki Putih',
+    sub: 'Chef bintang lima',
+    icon: 'fa-hat-cowboy-side',
+    iconBox: 'bg-teal-100 text-teal-700',
+    promptHint: "The person wears a tall white chef hat. Keep it clearly visible.",
+    draw: drawChefHat,
+  },
+  {
+    id: 'bunnyears',
+    group: 'Kepala',
+    name: 'Bando Kelinci Manis',
+    sub: 'Telinga panjang lucu',
+    icon: 'fa-carrot',
+    iconBox: 'bg-teal-100 text-teal-700',
+    promptHint: "The person wears a cute white bunny-ear headband with pink inner ears. Keep it clearly visible.",
+    draw: drawBunnyEars,
+  },
+  {
+    id: 'heartglasses',
+    group: 'Wajah',
+    name: 'Kacamata Hati Y2K',
+    sub: 'Lensa pink hati',
+    icon: 'fa-heart',
+    iconBox: 'bg-teal-100 text-teal-700',
+    promptHint: "The person wears pink heart-shaped Y2K sunglasses. Keep them clearly visible.",
+    draw: drawHeartGlasses,
   },
 ];
 
